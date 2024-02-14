@@ -36,12 +36,6 @@
     <script
         src="https://cdn.grapecity.com.cn/SpreadJS/package-contents/16.2.6/spread-sheets-pdf/dist/gc.spread.sheets.pdf.min.js"></script>
     <script
-        src="https://cdn.grapecity.com.cn/SpreadJS/package-contents/16.2.6/spread-sheets-pivot-addon/dist/gc.spread.pivot.pivottables.min.js"></script>
-    <script
-        src="https://cdn.grapecity.com.cn/SpreadJS/package-contents/16.2.6/spread-sheets-tablesheet/dist/gc.spread.sheets.tablesheet.min.js"></script>
-    <script
-        src="https://cdn.grapecity.com.cn/SpreadJS/package-contents/16.2.6/spread-sheets-ganttsheet/dist/gc.spread.sheets.ganttsheet.min.js"></script>
-    <script
         src="https://cdn.grapecity.com.cn/SpreadJS/package-contents/16.2.6/spread-sheets-formula-panel/dist/gc.spread.sheets.formulapanel.min.js"></script>
     <script
         src="https://cdn.grapecity.com.cn/SpreadJS/package-contents/16.2.6/spread-excelio/dist/gc.spread.excelio.min.js"></script>
@@ -82,6 +76,14 @@
                 designer.setConfig(designer.getData('isToolbarMode') ? ribbonConfig : toolbarConfig);
             });
 
+            fetch("http://localhost:3000/spreadjs/getWorkbook")
+                .then((res) => {
+                    spread.fromJSON(res);
+                })
+                .catch((error) => {
+                    console.error("Error:", error);
+                });
+
             var commandManager = spread.commandManager();
 
             // ------------------------------
@@ -113,7 +115,7 @@
             spread.commandManager().addListener("anyscLicenser", function () {
                 for (var i = 0; i < arguments.length; i++) {
                     var cmd = arguments[i].command;
-                    if(cmd.outer){
+                    if (cmd.outer) {
                         continue;
                     }
                     if (cmd.clipboardText) {

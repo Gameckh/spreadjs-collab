@@ -1,11 +1,12 @@
 const express = require('express');
 const http = require('http');
-const { startServer } = require('./websocketServer');
+const { startServer } = require('./src/ws/websocketServer');
 
 const app = express();
 const server = http.createServer(app);
 
 app.use(express.static('public'));
+app.use('/spreadjs', require('./src/routes/spreadjs'));
 
 startServer(server);
 

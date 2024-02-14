@@ -1,5 +1,6 @@
 // websocketServer.js
 const WebSocket = require('ws');
+const { executeCommand } = require('../services/state-keeper');
 
 function startServer(server) {
     const wss = new WebSocket.Server({ server });
@@ -12,6 +13,8 @@ function startServer(server) {
         });
 
         ws.on('message', function incoming(message) {
+            // Save the command from users.
+            executeCommand(JSON.parse(message));
             // Broadcast message to all clients
             wss.clients.forEach(function each(client) {
                 if (client !== ws && client.readyState === WebSocket.OPEN) {
