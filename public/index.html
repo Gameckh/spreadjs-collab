@@ -50,6 +50,7 @@
 
     <script type="module">
         import WebSocketClient from './websocketClient.js';
+        import CommandExecutor from './commandExecutor.js';
         window.onload = function () {
             var fontFamilyCmd = GC.Spread.Sheets.Designer.getCommand("fontFamily");
             var customCNFont = [
@@ -76,15 +77,19 @@
                 designer.setConfig(designer.getData('isToolbarMode') ? ribbonConfig : toolbarConfig);
             });
 
-            fetch("http://localhost:3000/spreadjs/getWorkbook")
+            var commandManager = spread.commandManager();
+            const commandExecutor = new CommandExecutor(spread);
+
+            fetch("http://localhost:3000/spreadjs/getCommands")
                 .then((res) => {
-                    spread.fromJSON(res);
+                    res.json().then((cmds) => {
+                        console.log(cmds);
+                        commandExecutor.fromCommands(cmds);
+                    });
                 })
                 .catch((error) => {
                     console.error("Error:", error);
                 });
-
-            var commandManager = spread.commandManager();
 
             // ------------------------------
 
@@ -112,7 +117,7 @@
 
             // ------------------------------
 
-            spread.commandManager().addListener("anyscLicenser", function () {
+            commandManager.addListener("anyscLicenser", function () {
                 for (var i = 0; i < arguments.length; i++) {
                     var cmd = arguments[i].command;
                     if (cmd.outer) {

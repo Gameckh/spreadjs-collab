@@ -1,9 +1,9 @@
 const express = require('express');
-const { getWorkbook } = require('../services/state-keeper');
+const { getCommands } = require('../services/state-keeper');
 let router = express.Router();
 
-router.get('/getWorkbook', function (req, res) {
-    res.send(JSON.stringify(getWorkbook()));
+router.get('/getCommands', function (req, res) {
+    res.send(getCommands());
 });
 
 module.exports = router;
