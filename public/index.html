@@ -17,10 +17,6 @@
 
 <body>
     <div id="gc-designer-container" role="application"> </div>
-    <label class="switch">
-        <input type="checkbox" id="switchBtn">
-        <span class="innerSlider round"></span>
-    </label>
     <script type="text/javascript"
         src="https://cdn.grapecity.com.cn/SpreadJS/package-contents/16.2.6/spread-sheets/dist/gc.spread.sheets.all.min.js"></script>
     <script
@@ -51,31 +47,34 @@
     <script type="module">
         import WebSocketClient from './websocketClient.js';
         import CommandExecutor from './commandExecutor.js';
+        import coworkConfig from './toolbarConfig.js';
         window.onload = function () {
-            var fontFamilyCmd = GC.Spread.Sheets.Designer.getCommand("fontFamily");
-            var customCNFont = [
-                { value: "微软雅黑", text: "微软雅黑" },
-                { value: "黑体", text: "黑体" },
-                { value: "新宋体", text: "新宋体" },
-                { value: "仿宋", text: "仿宋" },
-                { value: "隶书", text: "隶书" },
-                { value: "楷体", text: "楷体" },
-            ];
-            fontFamilyCmd.dropdownList = customCNFont.concat(fontFamilyCmd.dropdownList);
-            var ribbonConfig = GC.Spread.Sheets.Designer.DefaultConfig;
-            ribbonConfig.commandMap = {
-                fontFamily: fontFamilyCmd
-            }
-            var toolbarConfig = GC.Spread.Sheets.Designer.ToolBarModeConfig;
-            toolbarConfig.commandMap = {
-                fontFamily: fontFamilyCmd
-            }
             var designer = new GC.Spread.Sheets.Designer.Designer("gc-designer-container");
-            designer.setConfig(ribbonConfig);
+            // var toolbarConfig = GC.Spread.Sheets.Designer.ToolBarModeConfig;
+            designer.setConfig(coworkConfig);
             var spread = designer.getWorkbook();
-            document.getElementById('switchBtn').addEventListener('change', function () {
-                designer.setConfig(designer.getData('isToolbarMode') ? ribbonConfig : toolbarConfig);
-            });
+
+            // ---------- 设置workbook -----------
+            // 禁用新增 sheet 表单
+            spread.options.newTabVisible = false;
+            // 禁用 sheet 重命名及重置顺序（协同不支持，暂时禁用，等用户提）
+            spread.options.tabEditable = false;
+            spread.options.allowSheetReorder = false;
+            // 右键菜单
+            const oldOpenMenu = spread.contextMenu.onOpenMenu;
+            spread.contextMenu.onOpenMenu = function (menuData, itemsDataForShown, hitInfo, spread) {
+                // 禁用 sheet 页签的右键菜单
+                if(hitInfo.tabStripHitInfo) {
+                    return;
+                }
+                const selections = spread.getActiveSheet().getSelections();
+                // 禁用 corner 右键菜单
+                if (selections[0].row === -1 && selections[0].col === -1) {
+                    return;
+                }
+                oldOpenMenu.apply(this, [menuData, itemsDataForShown, hitInfo, spread]);
+            }
+            // -----------------------------------
 
             var commandManager = spread.commandManager();
             const commandExecutor = new CommandExecutor(spread);
@@ -83,8 +82,8 @@
             fetch("http://localhost:3000/spreadjs/getCommands")
                 .then((res) => {
                     res.json().then((cmds) => {
-                        console.log(cmds);
-                        commandExecutor.fromCommands(cmds);
+                        //console.log(cmds);
+                        //commandExecutor.fromCommands(cmds);
                     });
                 })
                 .catch((error) => {
@@ -95,25 +94,43 @@
 
             const wsClient = new WebSocketClient('ws://localhost:3000');
             wsClient.onMessage((event) => {
-                let cmd;
                 if (event.data instanceof Blob) {
                     // Convert Blob to text
                     const reader = new FileReader();
                     reader.onload = function () {
                         const text = reader.result;
                         console.log("Received text:", text);
-                        cmd = JSON.parse(text);
-                        cmd.outer = true;
-                        commandManager.execute(cmd);
+                        executeCmd(text);
                     };
                     reader.readAsText(event.data);
                 } else {
-                    console.log("Received text:", event.data);
-                    cmd = JSON.parse(event.data);
-                    cmd.outer = true;
-                    commandManager.execute(cmd);
+                    executeCmd(event.data);
                 }
             });
+
+            const popUpCommands = ['richText', 'link', 'customSort', 'defineName'];
+            function executeCmd(text) {
+                console.log("Received text:", text);
+                let cmd = JSON.parse(text);
+                cmd.outer = true;
+                // 当执行填充命令时，需要处理 range 对象
+                if (cmd.cmd === "fill") {
+                    cmd.startRange = new GC.Spread.Sheets.Range(
+                        cmd.startRange.row,
+                        cmd.startRange.col,
+                        cmd.startRange.rowCount,
+                        cmd.startRange.colCount
+                    );
+                    cmd.fillRange = new GC.Spread.Sheets.Range(
+                        cmd.fillRange.row,
+                        cmd.fillRange.col,
+                        cmd.fillRange.rowCount,
+                        cmd.fillRange.colCount
+                    );
+                }
+                // 当遇到所有“弹窗”命令时，阻塞命令执行
+                commandManager.execute(cmd);
+            }
 
             // ------------------------------
 
