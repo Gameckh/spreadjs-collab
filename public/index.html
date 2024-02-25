@@ -79,11 +79,10 @@
             var commandManager = spread.commandManager();
             const commandExecutor = new CommandExecutor(spread);
 
-            fetch("http://localhost:3000/spreadjs/getCommands")
+            fetch("http://localhost:3000/spreadjs/getWorkbook")
                 .then((res) => {
-                    res.json().then((cmds) => {
-                        //console.log(cmds);
-                        //commandExecutor.fromCommands(cmds);
+                    res.json().then((json) => {
+                        spread.fromJSON(json);
                     });
                 })
                 .catch((error) => {
@@ -151,25 +150,23 @@
                 }
             });
 
-            const popUpCommands = ['richText', 'link', 'customSort', 'defineName', 'editHyperlink', 'rowHeight', 'columnWidth'];
             function executeCmd(text) {
                 let cmd = JSON.parse(text);
                 console.log(cmd);
+                // 标记当前命令不是本地命令
                 cmd.outer = true;
                 // 处理fill, clipboardPaste 等问题
                 handleCmds(cmd, GC);
-                // 当遇到所有“弹窗”命令时，阻塞命令执行
-                if (popUpCommands.includes(cmd.cmd)) {
-                    return;
-                }
                 commandManager.execute(cmd);
             }
             // ------------------------------
 
             // ---------- 监听本端执行的命令 ----------
+            const popUpCommands = ['richText', 'link', 'customSort', 'defineName', 'editHyperlink', 'rowHeight', 'columnWidth'];
             commandManager.addListener("anyscLicenser", function () {
                 for (var i = 0; i < arguments.length; i++) {
                     var cmd = arguments[i].command;
+                    // 当执行远端命令时，不再继续发送
                     if (cmd.outer) {
                         continue;
                     }
@@ -178,6 +175,10 @@
                         cmd.fromRanges = null;
                     }
                     console.log(cmd);
+                    // 当遇到所有“弹窗”命令时，不向服务端发送
+                    if (popUpCommands.includes(cmd.cmd)) {
+                        return;
+                    }
                     wsClient.sendMessage(JSON.stringify(cmd));
                 }
             });

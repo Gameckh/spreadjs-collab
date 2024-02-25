@@ -11,6 +11,24 @@
   "license": "ISC",
   "dependencies": {
     "express": "^4.18.2",
-    "ws": "^8.16.0"
+    "ws": "^8.16.0",
+    "@grapecity/spread-excelio": "latest",
+    "@grapecity/spread-sheets": "latest",
+    "@grapecity/spread-sheets-barcode": "latest",
+    "@grapecity/spread-sheets-charts": "latest",
+    "@grapecity/spread-sheets-languagepackages": "latest",
+    "@grapecity/spread-sheets-pdf": "latest",
+    "@grapecity/spread-sheets-print": "latest",
+    "@grapecity/spread-sheets-shapes": "latest",
+    "@grapecity/spread-sheets-slicers": "latest",
+    "@grapecity/spread-sheets-formula-panel": "latest",
+    "@grapecity/spread-sheets-io": "latest",
+    "@grapecity/spread-sheets-vue": "latest",
+    "@grapecity/spread-sheets-resources-zh": "latest",
+    "@grapecity/spread-sheets-designer": "latest",
+    "@grapecity/spread-sheets-designer-vue": "latest",
+    "@grapecity/spread-sheets-designer-resources-cn": "latest",
+    "filereader": "^0.10.3",
+    "mock-browser": "^0.92.14"
   }
 }
