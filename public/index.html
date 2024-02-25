@@ -48,12 +48,12 @@
         import WebSocketClient from './websocketClient.js';
         import CommandExecutor from './commandExecutor.js';
         import coworkConfig from './toolbarConfig.js';
+        import handleCmds from './handleCmds.js';
         window.onload = function () {
             var designer = new GC.Spread.Sheets.Designer.Designer("gc-designer-container");
             // var toolbarConfig = GC.Spread.Sheets.Designer.ToolBarModeConfig;
             designer.setConfig(coworkConfig);
             var spread = designer.getWorkbook();
-
             // ---------- 设置workbook -----------
             // 禁用新增 sheet 表单
             spread.options.newTabVisible = false;
@@ -64,7 +64,7 @@
             const oldOpenMenu = spread.contextMenu.onOpenMenu;
             spread.contextMenu.onOpenMenu = function (menuData, itemsDataForShown, hitInfo, spread) {
                 // 禁用 sheet 页签的右键菜单
-                if(hitInfo.tabStripHitInfo) {
+                if (hitInfo.tabStripHitInfo) {
                     return;
                 }
                 const selections = spread.getActiveSheet().getSelections();
@@ -92,6 +92,50 @@
 
             // ------------------------------
 
+            // --------- 实现 undo redo -------
+            // 注销原生的 undo redo
+            commandManager.setShortcutKey(null, GC.Spread.Commands.Key.z, true, false, false, false);
+            commandManager.setShortcutKey(null, GC.Spread.Commands.Key.y, true, false, false, false);
+            // 注册自定义 undo redo
+            var undoCmd = {
+                canUndo: false,
+                execute: function (spread, options, isUndo) {
+                    var Commands = GC.Spread.Sheets.Commands;
+                    options.cmd = "undo";
+                    if (isUndo) {
+                        Commands.undoTransaction(spread, options);
+                        return true;
+                    } else {
+                        Commands.startTransaction(spread, options);
+                        var undoManager = spread.undoManager();
+                        undoManager.undo();
+                        Commands.endTransaction(spread, options);
+                        return true;
+                    }
+                }
+            };
+            commandManager.register("undo", undoCmd, GC.Spread.Commands.Key.z, true, false, false, false);
+            var redoCmd = {
+                canUndo: false,
+                execute: function (spread, options, isUndo) {
+                    var Commands = GC.Spread.Sheets.Commands;
+                    options.cmd = "redo";
+                    if (isUndo) {
+                        Commands.undoTransaction(spread, options);
+                        return true;
+                    } else {
+                        Commands.startTransaction(spread, options);
+                        var undoManager = spread.undoManager();
+                        undoManager.redo();
+                        Commands.endTransaction(spread, options);
+                        return true;
+                    }
+                }
+            };
+            commandManager.register("redo", redoCmd, GC.Spread.Commands.Key.y, true, false, false, false);
+
+            // ------ 执行服务端回传的命令 ----------
+
             const wsClient = new WebSocketClient('ws://localhost:3000');
             wsClient.onMessage((event) => {
                 if (event.data instanceof Blob) {
@@ -99,7 +143,6 @@
                     const reader = new FileReader();
                     reader.onload = function () {
                         const text = reader.result;
-                        console.log("Received text:", text);
                         executeCmd(text);
                     };
                     reader.readAsText(event.data);
@@ -108,32 +151,22 @@
                 }
             });
 
-            const popUpCommands = ['richText', 'link', 'customSort', 'defineName'];
+            const popUpCommands = ['richText', 'link', 'customSort', 'defineName', 'editHyperlink', 'rowHeight', 'columnWidth'];
             function executeCmd(text) {
-                console.log("Received text:", text);
                 let cmd = JSON.parse(text);
+                console.log(cmd);
                 cmd.outer = true;
-                // 当执行填充命令时，需要处理 range 对象
-                if (cmd.cmd === "fill") {
-                    cmd.startRange = new GC.Spread.Sheets.Range(
-                        cmd.startRange.row,
-                        cmd.startRange.col,
-                        cmd.startRange.rowCount,
-                        cmd.startRange.colCount
-                    );
-                    cmd.fillRange = new GC.Spread.Sheets.Range(
-                        cmd.fillRange.row,
-                        cmd.fillRange.col,
-                        cmd.fillRange.rowCount,
-                        cmd.fillRange.colCount
-                    );
-                }
+                // 处理fill, clipboardPaste 等问题
+                handleCmds(cmd, GC);
                 // 当遇到所有“弹窗”命令时，阻塞命令执行
+                if (popUpCommands.includes(cmd.cmd)) {
+                    return;
+                }
                 commandManager.execute(cmd);
             }
-
             // ------------------------------
 
+            // ---------- 监听本端执行的命令 ----------
             commandManager.addListener("anyscLicenser", function () {
                 for (var i = 0; i < arguments.length; i++) {
                     var cmd = arguments[i].command;
@@ -144,11 +177,11 @@
                         cmd.fromSheet = null;
                         cmd.fromRanges = null;
                     }
-                    console.log(JSON.stringify(cmd));
+                    console.log(cmd);
                     wsClient.sendMessage(JSON.stringify(cmd));
                 }
             });
-
+            // --------------------------------------
         }
     </script>
 </body>

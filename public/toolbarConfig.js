@@ -115,14 +115,6 @@ const coworkConfig = {
                         }
                     },
                     {
-                        "buttonGroupName": "定义的名称",
-                        "commandGroup": {
-                            "commands": [
-                                "nameManager"
-                            ]
-                        }
-                    },
-                    {
                         "buttonGroupName": "编辑",
                         "commandGroup": {
                             "children": [
