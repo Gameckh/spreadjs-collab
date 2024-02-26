@@ -1,7 +1,7 @@
 // websocketServer.js
 const WebSocket = require('ws');
-// const { saveCommand } = require('../services/state-keeper');
-// const { executeCmd } = require('../spreadjs/executer');
+// const stateKeeper = require('../services/state-keeper');
+const { executeCmd } = require('../spreadjs_playwright/executer');
 
 function startServer(server) {
     const wss = new WebSocket.Server({ server });
@@ -13,11 +13,13 @@ function startServer(server) {
 
         ws.on('message', function incoming(message) {
             // Save the command from users.
-            // executeCmd(message.toString('utf8'));
+            const cmd = message.toString('utf8');
+            executeCmd(cmd);
+            // stateKeeper.saveCommand(cmd);
             // Broadcast message to all clients
             wss.clients.forEach(function each(client) {
                 if (client !== ws && client.readyState === WebSocket.OPEN) {
-                    client.send(message);
+                    client.send(cmd);
                 }
             });
         });
@@ -25,6 +27,11 @@ function startServer(server) {
 
     // Heartbeat
     const interval = setInterval(function ping() {
+        // 当没有活跃连接时，清空文档和命令
+        if(wss.clients.length === 0){
+            stateKeeper.clearCommands()
+            stateKeeper.clearSnapshot()
+        }
         wss.clients.forEach(function each(ws) {
             if (ws.isAlive === false) return ws.terminate();
             ws.isAlive = false;

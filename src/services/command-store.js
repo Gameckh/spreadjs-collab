@@ -24,6 +24,11 @@ class CommandStore {
     getCurrentVersion() {
         return this.version;
     }
+
+    clearCommands() {
+        this.commands = [];
+        this.version = 0;
+    }
 }
 
 module.exports = CommandStore;
