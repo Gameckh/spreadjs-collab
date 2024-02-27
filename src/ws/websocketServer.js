@@ -11,10 +11,10 @@ function startServer(server) {
             ws.isAlive = true;
         });
 
-        ws.on('message', function incoming(message) {
+        ws.on('message', async function incoming(message) {
             // Save the command from users.
             const cmd = message.toString('utf8');
-            executeCmd(cmd);
+            await executeCmd(cmd);
             // stateKeeper.saveCommand(cmd);
             // Broadcast message to all clients
             wss.clients.forEach(function each(client) {
