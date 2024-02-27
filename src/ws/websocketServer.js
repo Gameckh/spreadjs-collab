@@ -1,7 +1,7 @@
 // websocketServer.js
 const WebSocket = require('ws');
 // const stateKeeper = require('../services/state-keeper');
-const { executeCmd } = require('../spreadjs_playwright/executer');
+const { executeCmd } = require('../spreadjs/executer');
 
 function startServer(server) {
     const wss = new WebSocket.Server({ server });
