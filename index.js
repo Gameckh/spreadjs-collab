@@ -1,7 +1,7 @@
 const express = require('express');
 const http = require('http');
 const { startServer } = require('./src/ws/websocketServer');
-const { initSpreadJS } = require('./src/spreadjs_playwright/initSpread');
+const { initSpreadJS } = require('./src/spreadjs/initSpread');
 
 const app = express();
 const server = http.createServer(app);

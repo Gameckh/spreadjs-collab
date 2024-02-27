@@ -1,6 +1,6 @@
 const express = require('express');
 const { getCommands } = require('../services/state-keeper');
-const { getWorkbook } = require('../spreadjs_playwright/initSpread');
+const { getWorkbook } = require('../spreadjs/initSpread');
 let router = express.Router();
 
 router.get('/getCommands', function (req, res) {
