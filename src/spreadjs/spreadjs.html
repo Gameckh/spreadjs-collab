@@ -43,8 +43,15 @@
 
     <script>
         window.onload = function () {
-            var designer = new GC.Spread.Sheets.Designer.Designer("gc-designer-container");
-            var spread = designer.getWorkbook();
+            const designer = new GC.Spread.Sheets.Designer.Designer("gc-designer-container");
+            const spread = designer.getWorkbook();
+            // ---------- 设置workbook -----------
+            // 禁用新增 sheet 表单
+            spread.options.newTabVisible = false;
+            // 禁用 sheet 重命名及重置顺序（协同不支持，暂时禁用，等用户提）
+            spread.options.tabEditable = false;
+            spread.options.allowSheetReorder = false;
+            // -----------------------------------
         }
     </script>
 </body>
